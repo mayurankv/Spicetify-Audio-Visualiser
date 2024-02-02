@@ -1,6 +1,6 @@
 {
-	"displayName": "NCS Visualizer",
-	"nameId": "ncs-visualizer",
+	"displayName": "Audio Visualiser",
+	"nameId": "spicetify-audio-visualiser",
 	"icon": "css/icon-inactive.svg",
 	"activeIcon": "css/icon-active.svg"
 }

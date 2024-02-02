@@ -1,10 +1,10 @@
 {
-    "name": "NCS Visualizer",
-    "description": "NCS-style visualizer for Spicetify",
-    "preview": "resources/screenshot.png",
+    "name": "Spicetify Audio Visualiser",
+    "description": "Audio visualiser for Spicetify",
+    "preview": "images/audio-visualiser.png",
     "readme": "README.md",
     "authors": [
-        { "name": "Konsl", "url": "https://github.com/Konsl" }
+        { "name": "Mayuran Visakan", "url": "https://github.com/mayurankv" }
     ],
     "tags": ["visualizer"]
 }
