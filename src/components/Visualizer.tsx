@@ -1,74 +1,83 @@
 import React, { useCallback, useMemo } from "react";
-import { fragmentShader as BLUR_FRAG_SHADER, vertexShader as BLUR_VERT_SHADER } from "../shaders/blur";
-import { fragmentShader as FINALIZE_FRAG_SHADER, vertexShader as FINALIZE_VERT_SHADER } from "../shaders/finalize";
-import { fragmentShader as PARTICLE_FRAG_SHADER, vertexShader as PARTICLE_VERT_SHADER } from "../shaders/particle";
-import { decibelsToAmplitude, mapLinear, sampleAmplitudeMovingAverage } from "../utils";
 import AnimatedCanvas from "./AnimatedCanvas";
+import { sampleAmplitudeMovingAverage, decibelsToAmplitude, mapLinear } from "../utils";
+import { vertexShader as PARTICLE_VERT_SHADER, fragmentShader as PARTICLE_FRAG_SHADER } from "../shaders/particle";
+import { vertexShader as BLUR_VERT_SHADER, fragmentShader as BLUR_FRAG_SHADER } from "../shaders/blur";
+import { vertexShader as FINALIZE_VERT_SHADER, fragmentShader as FINALIZE_FRAG_SHADER } from "../shaders/finalize";
 
 type CanvasData = {
 	themeColor: Spicetify.Color;
 	seed: number;
-	amplitudeCurve: Array<{
+	amplitudeCurve: {
 		x: number;
 		y: number;
-	}>;
+	}[];
 };
 
-type RendererState = {isError: true} | {
-	isError: false;
-	particleShader: WebGLProgram;
-	blurShader: WebGLProgram;
-	finalizeShader: WebGLProgram;
-	viewportSize: number;
+type RendererState =
+	| {
+			isError: true;
+	  }
+	| {
+			isError: false;
+			particleShader: WebGLProgram;
+			blurShader: WebGLProgram;
+			finalizeShader: WebGLProgram;
+			viewportSize: number;
 
-	inPositionLoc: number;
-	inPositionLocBlur: number;
-	inPositionLocFinalize: number;
+			inPositionLoc: number;
+			inPositionLocBlur: number;
+			inPositionLocFinalize: number;
 
-	uScaledTimeLoc: WebGLUniformLocation;
-	uAmplitudeLoc: WebGLUniformLocation;
-	uSeedLoc: WebGLUniformLocation;
-	uDotCountLoc: WebGLUniformLocation;
-	uDotRadiusLoc: WebGLUniformLocation;
-	uDotRadiusPXLoc: WebGLUniformLocation;
-	uDotSpacingLoc: WebGLUniformLocation;
-	uDotOffsetLoc: WebGLUniformLocation;
-	uSphereRadiusLoc: WebGLUniformLocation;
-	uFeatherLoc: WebGLUniformLocation;
-	uNoiseFrequencyLoc: WebGLUniformLocation;
-	uNoiseAmplitudeLoc: WebGLUniformLocation;
+			uScaledTimeLoc: WebGLUniformLocation;
+			uAmplitudeLoc: WebGLUniformLocation;
+			uSeedLoc: WebGLUniformLocation;
+			uDotCountLoc: WebGLUniformLocation;
+			uDotRadiusLoc: WebGLUniformLocation;
+			uDotRadiusPXLoc: WebGLUniformLocation;
+			uDotSpacingLoc: WebGLUniformLocation;
+			uDotOffsetLoc: WebGLUniformLocation;
+			uSphereRadiusLoc: WebGLUniformLocation;
+			uFeatherLoc: WebGLUniformLocation;
+			uNoiseFrequencyLoc: WebGLUniformLocation;
+			uNoiseAmplitudeLoc: WebGLUniformLocation;
 
-	uBlurRadiusLoc: WebGLUniformLocation;
-	uBlurDirectionLoc: WebGLUniformLocation;
-	uBlurInputTextureLoc: WebGLUniformLocation;
+			uBlurRadiusLoc: WebGLUniformLocation;
+			uBlurDirectionLoc: WebGLUniformLocation;
+			uBlurInputTextureLoc: WebGLUniformLocation;
 
-	uOutputColorLoc: WebGLUniformLocation;
-	uBlurredTextureLoc: WebGLUniformLocation;
-	uOriginalTextureLoc: WebGLUniformLocation;
+			uOutputColorLoc: WebGLUniformLocation;
+			uBlurredTextureLoc: WebGLUniformLocation;
+			uOriginalTextureLoc: WebGLUniformLocation;
 
-	quadBuffer: WebGLBuffer;
+			quadBuffer: WebGLBuffer;
 
-	particleFramebuffer: WebGLFramebuffer;
-	particleTexture: WebGLTexture;
-	blurXFramebuffer: WebGLFramebuffer;
-	blurXTexture: WebGLTexture;
-	blurYFramebuffer: WebGLFramebuffer;
-	blurYTexture: WebGLTexture;
-};
+			particleFramebuffer: WebGLFramebuffer;
+			particleTexture: WebGLTexture;
+			blurXFramebuffer: WebGLFramebuffer;
+			blurXTexture: WebGLTexture;
+			blurYFramebuffer: WebGLFramebuffer;
+			blurYTexture: WebGLTexture;
+	  };
 
-export default function Visualizer(props: {isEnabled: boolean, onError: (msg: string) => void, themeColor: Spicetify.Color, audioAnalysis?: SpotifyAudioAnalysis}) {
+export default function Visualizer(props: {
+	isEnabled: boolean;
+	onError: (msg: string) => void;
+	themeColor: Spicetify.Color;
+	audioAnalysis?: SpotifyAudioAnalysis;
+}) {
 	const amplitudeCurve = useMemo(() => {
 		if (!props.audioAnalysis) return [{ x: 0, y: 0 }];
 
 		const segments = props.audioAnalysis.segments;
 
 		const amplitudeCurve: Point2D[] = segments.flatMap(segment =>
-			segment.loudness_max_time ? [
-					{ x: segment.start, y: decibelsToAmplitude(segment.loudness_start) },
-					{ x: segment.start + segment.loudness_max_time, y: decibelsToAmplitude(segment.loudness_max) }
-			] : [
-					{ x: segment.start, y: decibelsToAmplitude(segment.loudness_start) }
-			]
+			segment.loudness_max_time
+				? [
+						{ x: segment.start, y: decibelsToAmplitude(segment.loudness_start) },
+						{ x: segment.start + segment.loudness_max_time, y: decibelsToAmplitude(segment.loudness_max) }
+				  ]
+				: [{ x: segment.start, y: decibelsToAmplitude(segment.loudness_start) }]
 		);
 
 		if (segments.length) {
@@ -79,7 +88,7 @@ export default function Visualizer(props: {isEnabled: boolean, onError: (msg: st
 			});
 		}
 
-		return  ;
+		return amplitudeCurve;
 	}, [props.audioAnalysis]);
 
 	const seed = props.audioAnalysis?.meta.timestamp ?? 0;
@@ -194,10 +203,10 @@ export default function Visualizer(props: {isEnabled: boolean, onError: (msg: st
 		gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
 		// prettier-ignore
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-			-1, -1,
-			-1,  1,
-			1,  1,
-			1, -1
+    		-1, -1,
+    		-1,  1,
+			 1,  1,
+    		 1, -1
 		]), gl.STATIC_DRAW);
 
 		gl.enable(gl.BLEND);
