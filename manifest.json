@@ -1,10 +1,10 @@
 {
-    "name": "Spicetify Audio Visualiser",
-    "description": "Audio visualiser for Spicetify",
-    "preview": "images/audio-visualiser.png",
-    "readme": "README.md",
-    "authors": [
-        { "name": "Mayuran Visakan", "url": "https://github.com/mayurankv" }
-    ],
-    "tags": ["visualizer"]
+	"name": "Spicetify Audio Visualiser",
+	"description": "Audio visualiser for Spicetify",
+	"preview": "images/audio-visualiser.png",
+	"readme": "README.md",
+	"authors": [
+		{ "name": "Mayuran Visakan", "url": "https://github.com/mayurankv" }
+	],
+	"tags": [ "visualizer" ]
 }
