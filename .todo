@@ -1,9 +1,16 @@
 Visualiser:
 	Waveform:
-		☐ Get via local input source
-			☐ Blackhole/Soundflower/Loopback
-		☐ Parse from this into waveform data
-		☐ Use this waveform data for shaders
+		Spotify API:
+			☐ Extract timbre basis functions
+			☐ Reconstruct waveform
+
+		Local:
+			☐ Get via local input source
+				☐ Blackhole/Soundflower/Loopback
+			☐ Parse from this into waveform data
+			☐ Use this waveform data for shaders
+
+		Websocket:
 
 	Shaders:
 		☐ Work out after waveform
