@@ -11,9 +11,6 @@ uniform float uDotRadiusPX;
 uniform float uDotSpacing;
 uniform float uDotOffset;
 
-uniform float uSphereRadius;
-uniform float uFeather;
-
 uniform float uNoiseFrequency;
 uniform float uNoiseAmplitude;
 
@@ -124,15 +121,6 @@ void main() {
     float noise = fractalNoise(vec3(dotPos * uNoiseFrequency, uScaledTime)) * uNoiseAmplitude;
 
     vec3 dotCenter = vec3(dotPos * uDotSpacing + uDotOffset + noise * 0.0, (noise * 0.0 + 0.5 * uNoiseAmplitude) * uAmplitude);
-
-    // float distanceFromCenter = length(dotCenter);
-    // dotCenter /= distanceFromCenter;
-    // distanceFromCenter = min(uSphereRadius, distanceFromCenter);
-    // dotCenter *= distanceFromCenter;
-
-    // float featherRadius = uSphereRadius - uFeather;
-    // float featherStrength = 1.0 - clamp((distanceFromCenter - featherRadius) / uFeather, 0.0, 1.0);
-    // dotCenter *= featherStrength * (uSphereRadius / distanceFromCenter - 1.0) + 1.0;
 
     dotCenter.y *= -1.0;
 

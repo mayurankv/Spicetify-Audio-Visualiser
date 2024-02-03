@@ -30,15 +30,13 @@ type RendererState =
 			inPositionLocFinalize: number;
 
 			uScaledTimeLoc: WebGLUniformLocation;
-			uAmplitudeLoc: WebGLUniformLocation;
+			uSpectrumLoc: WebGLUniformLocation;
 			uSeedLoc: WebGLUniformLocation;
 			uDotCountLoc: WebGLUniformLocation;
 			uDotRadiusLoc: WebGLUniformLocation;
 			uDotRadiusPXLoc: WebGLUniformLocation;
 			uDotSpacingLoc: WebGLUniformLocation;
 			uDotOffsetLoc: WebGLUniformLocation;
-			uSphereRadiusLoc: WebGLUniformLocation;
-			uFeatherLoc: WebGLUniformLocation;
 			uNoiseFrequencyLoc: WebGLUniformLocation;
 			uNoiseAmplitudeLoc: WebGLUniformLocation;
 
@@ -153,15 +151,13 @@ export default function Visualizer(props: {
 
 		const inPositionLoc = gl.getAttribLocation(particleShader, "inPosition")!;
 		const uScaledTimeLoc = gl.getUniformLocation(particleShader, "uScaledTime")!;
-		const uAmplitudeLoc = gl.getUniformLocation(particleShader, "uAmplitude")!;
+		const uSpectrumLoc = gl.getUniformLocation(particleShader, "uSpectrum")!;
 		const uSeedLoc = gl.getUniformLocation(particleShader, "uSeed")!;
 		const uDotCountLoc = gl.getUniformLocation(particleShader, "uDotCount")!;
 		const uDotRadiusLoc = gl.getUniformLocation(particleShader, "uDotRadius")!;
 		const uDotRadiusPXLoc = gl.getUniformLocation(particleShader, "uDotRadiusPX")!;
 		const uDotSpacingLoc = gl.getUniformLocation(particleShader, "uDotSpacing")!;
 		const uDotOffsetLoc = gl.getUniformLocation(particleShader, "uDotOffset")!;
-		const uSphereRadiusLoc = gl.getUniformLocation(particleShader, "uSphereRadius")!;
-		const uFeatherLoc = gl.getUniformLocation(particleShader, "uFeather")!;
 		const uNoiseFrequencyLoc = gl.getUniformLocation(particleShader, "uNoiseFrequency")!;
 		const uNoiseAmplitudeLoc = gl.getUniformLocation(particleShader, "uNoiseAmplitude")!;
 
@@ -218,15 +214,13 @@ export default function Visualizer(props: {
 			inPositionLocFinalize,
 
 			uScaledTimeLoc,
-			uAmplitudeLoc,
+			uSpectrumLoc,
 			uSeedLoc,
 			uDotCountLoc,
 			uDotRadiusLoc,
 			uDotRadiusPXLoc,
 			uDotSpacingLoc,
 			uDotOffsetLoc,
-			uSphereRadiusLoc,
-			uFeatherLoc,
 			uNoiseFrequencyLoc,
 			uNoiseAmplitudeLoc,
 
@@ -282,22 +276,18 @@ export default function Visualizer(props: {
 		const uDotRadiusPX = uDotRadius * 0.5 * state.viewportSize;
 		const uDotSpacing = 0.9 / (uDotCount - 1);
 		const uDotOffset = -0.9 / 2;
-		const uSphereRadius = mapLinear(uAmplitude, 0, 1, 0.75 * 0.9, 0.9);
-		const uFeather = Math.pow(uAmplitude + 3, 2) * (45 / 1568);
 		const uNoiseFrequency = 4 * 0.01;
 		const uNoiseAmplitude = 0.2 * 0.9;
 
 		gl.useProgram(state.particleShader);
 		gl.uniform1f(state.uScaledTimeLoc, uScaledTime);
-		gl.uniform1f(state.uAmplitudeLoc, uAmplitude);
+		gl.uniform1f(state.uSpectrumLoc, uSpectrum);
 		gl.uniform1i(state.uSeedLoc, uSeed);
 		gl.uniform1i(state.uDotCountLoc, uDotCount);
 		gl.uniform1f(state.uDotRadiusLoc, uDotRadius);
 		gl.uniform1f(state.uDotRadiusPXLoc, uDotRadiusPX);
 		gl.uniform1f(state.uDotSpacingLoc, uDotSpacing);
 		gl.uniform1f(state.uDotOffsetLoc, uDotOffset);
-		gl.uniform1f(state.uSphereRadiusLoc, uSphereRadius);
-		gl.uniform1f(state.uFeatherLoc, uFeather);
 		gl.uniform1f(state.uNoiseFrequencyLoc, uNoiseFrequency);
 		gl.uniform1f(state.uNoiseAmplitudeLoc, uNoiseAmplitude);
 
