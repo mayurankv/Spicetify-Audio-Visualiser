@@ -1,16 +1,16 @@
 import React, { useCallback, useMemo } from "react";
+import { fragmentShader as BLUR_FRAG_SHADER, vertexShader as BLUR_VERT_SHADER } from "../shaders/blur";
+import { fragmentShader as FINALIZE_FRAG_SHADER, vertexShader as FINALIZE_VERT_SHADER } from "../shaders/finalize";
+import { fragmentShader as PARTICLE_FRAG_SHADER, vertexShader as PARTICLE_VERT_SHADER } from "../shaders/particle";
+import { decibelsToAmplitude, mapLinear, sampleAmplitudeMovingAverage, sumArrays } from '../utils';
 import AnimatedCanvas from "./AnimatedCanvas";
-import { sampleAmplitudeMovingAverage, decibelsToAmplitude, mapLinear } from "../utils";
-import { vertexShader as PARTICLE_VERT_SHADER, fragmentShader as PARTICLE_FRAG_SHADER } from "../shaders/particle";
-import { vertexShader as BLUR_VERT_SHADER, fragmentShader as BLUR_FRAG_SHADER } from "../shaders/blur";
-import { vertexShader as FINALIZE_VERT_SHADER, fragmentShader as FINALIZE_FRAG_SHADER } from "../shaders/finalize";
 
 type CanvasData = {
 	themeColor: Spicetify.Color;
 	seed: number;
-	amplitudeCurve: {
+	spectrumCurve: {
 		x: number;
-		y: number;
+		y: number[];
 	}[];
 };
 
@@ -66,29 +66,23 @@ export default function Visualizer(props: {
 	themeColor: Spicetify.Color;
 	audioAnalysis?: SpotifyAudioAnalysis;
 }) {
-	const amplitudeCurve = useMemo(() => {
-		if (!props.audioAnalysis) return [{ x: 0, y: 0 }];
+	const spectrumCurve = useMemo(() => {
+		const TIMBREBASES = [
+			[[1]]
+		];
+
+
+
+		const numSubSegments = TIMBREBASES[0][0].length; //154
+		const numFrequencies = TIMBREBASES[0].length;  //110
+
+		if (!props.audioAnalysis) return [{ x: 0, y: new Array(numFrequencies).fill(0) }];
 
 		const segments = props.audioAnalysis.segments;
 
-		const amplitudeCurve: Point2D[] = segments.flatMap(segment =>
-			segment.loudness_max_time
-				? [
-						{ x: segment.start, y: decibelsToAmplitude(segment.loudness_start) },
-						{ x: segment.start + segment.loudness_max_time, y: decibelsToAmplitude(segment.loudness_max) }
-				  ]
-				: [{ x: segment.start, y: decibelsToAmplitude(segment.loudness_start) }]
-		);
+		const spectrumCurve: {x: number, y: number[]}[] = segments.flatMap(segment => [...Array(numSubSegments).keys()].map(subSegment_num => { return { x: (segment.start + (2 * subSegment_num + 1) * (segment.duration / (2 * numSubSegments))), y: sumArrays(segment.timbre.map((timbre_val, timbre_num) => [...Array(numFrequencies).keys()].map(f_num => TIMBREBASES[timbre_num][f_num][subSegment_num] * timbre_val))) } }));
 
-		if (segments.length) {
-			const lastSegment = segments[segments.length - 1];
-			amplitudeCurve.push({
-				x: lastSegment.start + lastSegment.duration,
-				y: decibelsToAmplitude(lastSegment.loudness_end)
-			});
-		}
-
-		return amplitudeCurve;
+		return spectrumCurve;
 	}, [props.audioAnalysis]);
 
 	const seed = props.audioAnalysis?.meta.timestamp ?? 0;
@@ -281,7 +275,7 @@ export default function Visualizer(props: {
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
 		const uScaledTime = (Spicetify.Player.getProgress() / 1000) * 75 * 0.01;
-		const uAmplitude = sampleAmplitudeMovingAverage(data.amplitudeCurve, Spicetify.Player.getProgress() / 1000, 0.15);
+		const uSpectrum = sampleSpectrumMovingAverage(data.spectrumCurve, Spicetify.Player.getProgress() / 1000, 0.15);
 		const uSeed = data.seed;
 		const uDotCount = 100;
 		const uDotRadius = 0.9 / uDotCount;
@@ -365,7 +359,7 @@ export default function Visualizer(props: {
 	return (
 		<AnimatedCanvas
 			isEnabled={props.isEnabled}
-			data={{ themeColor: props.themeColor, seed, amplitudeCurve }}
+			data={{ themeColor: props.themeColor, seed, spectrumCurve: spectrumCurve }}
 			onInit={onInit}
 			onResize={onResize}
 			onRender={onRender}

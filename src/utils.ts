@@ -28,6 +28,11 @@ export function mapLinear(value: number, iMin: number, iMax: number, oMin: numbe
 	return value;
 }
 
+export function sumArrays(...arrays: any[]) {
+	const n = arrays.reduce((max, xs) => Math.max(max, xs.length), 0);
+	const result = Array.from({ length: n });
+	return result.map((_, i) => arrays.map(xs => xs[i] || 0).reduce((sum, x) => sum + x, 0));
+}
 // calculate the integral of the linear function through p1 and p2 between p1.x and p2.x
 export function integrateLinearFunction(p1: Point2D, p2: Point2D): number {
 	return -0.5 * (p1.x - p2.x) * (p1.y + p2.y);
