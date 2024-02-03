@@ -31,6 +31,41 @@ function getAmplitudeCurve(audioAnalysis) {
 
 let amplitudeCurve = getAmplitudeCurve(audioAnalysis)
 
+function findPointIndex(amplitudeCurve, position) {
+	let lowerBound = 0;
+	let upperBound = amplitudeCurve.length;
+
+	while (upperBound - lowerBound > 1) {
+		const testIndex = Math.floor((upperBound + lowerBound) / 2);
+		const pointPos = amplitudeCurve[testIndex].x;
+
+		if (pointPos <= position) lowerBound = testIndex;
+		else upperBound = testIndex;
+	}
+
+	return lowerBound;
+}
+
+function mapLinear(value, iMin, iMax, oMin, oMax) {
+	value = (value - iMin) / (iMax - iMin);
+	value = value * (oMax - oMin) + oMin;
+	return value;
+}
+
+function integrateLinearFunction(p1, p2) {
+	return -0.5 * (p1.x - p2.x) * (p1.y + p2.y);
+}
+
+function calculateAmplitude(amplitudeCurve, position) {
+	const pointIndex = findPointIndex(amplitudeCurve, position);
+	const point = amplitudeCurve[pointIndex];
+
+	if (pointIndex > amplitudeCurve.length - 2) return point.y;
+	const nextPoint = amplitudeCurve[pointIndex + 1];
+
+	return mapLinear(position, point.x, nextPoint.x, point.y, nextPoint.y);
+}
+
 function sampleAmplitudeMovingAverage(amplitudeCurve, position, windowSize) {
 	if (windowSize == 0) return calculateAmplitude(amplitudeCurve, position);
 
@@ -76,3 +111,5 @@ function sampleAmplitudeMovingAverage(amplitudeCurve, position, windowSize) {
 
 	return integral / windowSize;
 }
+
+sampleAmplitudeMovingAverage(amplitudeCurve, Spicetify.Player.getProgress() / 1000, 0.15);

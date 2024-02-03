@@ -1,0 +1,9 @@
+Visualiser:
+	Waveform:
+		☐ Get via local input source
+			☐ Blackhole/Soundflower/Loopback
+		☐ Parse from this into waveform data
+		☐ Use this waveform data for shaders
+
+	Shaders:
+		☐ Work out after waveform

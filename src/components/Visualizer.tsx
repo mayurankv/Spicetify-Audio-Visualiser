@@ -1,9 +1,9 @@
 import React, { useCallback, useMemo } from "react";
-import { fragmentShader as BLUR_FRAG_SHADER, vertexShader as BLUR_VERT_SHADER } from "../shaders/blur";
-import { fragmentShader as FINALIZE_FRAG_SHADER, vertexShader as FINALIZE_VERT_SHADER } from "../shaders/finalize";
-import { fragmentShader as PARTICLE_FRAG_SHADER, vertexShader as PARTICLE_VERT_SHADER } from "../shaders/particle";
-import { decibelsToAmplitude, mapLinear, sampleAmplitudeMovingAverage } from "../utils";
 import AnimatedCanvas from "./AnimatedCanvas";
+import { sampleAmplitudeMovingAverage, decibelsToAmplitude, mapLinear } from "../utils";
+import { vertexShader as PARTICLE_VERT_SHADER, fragmentShader as PARTICLE_FRAG_SHADER } from "../shaders/particle";
+import { vertexShader as BLUR_VERT_SHADER, fragmentShader as BLUR_FRAG_SHADER } from "../shaders/blur";
+import { vertexShader as FINALIZE_VERT_SHADER, fragmentShader as FINALIZE_FRAG_SHADER } from "../shaders/finalize";
 
 type CanvasData = {
 	themeColor: Spicetify.Color;
