@@ -1,4 +1,4 @@
-export function findPointIndex(amplitudeCurve: Point2D[], position: number): number {
+export function findPointIndex(amplitudeCurve: {x: number, y: number[]}[], position: number): number {
 	let lowerBound = 0;
 	let upperBound = amplitudeCurve.length;
 
@@ -13,83 +13,69 @@ export function findPointIndex(amplitudeCurve: Point2D[], position: number): num
 	return lowerBound;
 }
 
-export function decibelsToAmplitude(decibels: number): number {
-	return Math.pow(10, decibels / 20);
-}
-
 export function smoothstep(x: number): number {
-	//return x * x * x * (3 * x * (2 * x - 5) + 10);
 	return x * x * (3 - 2 * x);
 }
 
-export function mapLinear(value: number, iMin: number, iMax: number, oMin: number, oMax: number): number {
-	value = (value - iMin) / (iMax - iMin);
-	value = value * (oMax - oMin) + oMin;
-	return value;
-}
+
 
 export function sumArrays(...arrays: any[]) {
 	const n = arrays.reduce((max, xs) => Math.max(max, xs.length), 0);
 	const result = Array.from({ length: n });
 	return result.map((_, i) => arrays.map(xs => xs[i] || 0).reduce((sum, x) => sum + x, 0));
 }
+
+export function mapLinear(value: number, iMin: number, iMax: number, oMin: number[], oMax: number[]): number[] {
+	value = (value - iMin) / (iMax - iMin);
+	return sumArrays(oMax.map(function (x) { return x * value; }), oMin.map(function (x) { return x * (1 - value); }));
+}
+
 // calculate the integral of the linear function through p1 and p2 between p1.x and p2.x
-export function integrateLinearFunction(p1: Point2D, p2: Point2D): number {
-	return -0.5 * (p1.x - p2.x) * (p1.y + p2.y);
+export function integrateLinearFunction(p1: {x: number, y: number[]}, p2: {x: number, y: number[]}): number[] {
+	return sumArrays(p1.y, p2.y).map(function (x) { return x * 0.5 * (p2.x - p1.x) });
 }
 
-export function calculateAmplitude(amplitudeCurve: Point2D[], position: number): number {
-	const pointIndex = findPointIndex(amplitudeCurve, position);
-	const point = amplitudeCurve[pointIndex];
-
-	if (pointIndex > amplitudeCurve.length - 2) return point.y;
-	const nextPoint = amplitudeCurve[pointIndex + 1];
-
-	return mapLinear(position, point.x, nextPoint.x, point.y, nextPoint.y);
-}
-
-export function sampleAmplitudeMovingAverage(amplitudeCurve: Point2D[], position: number, windowSize: number): number {
-	if (windowSize == 0) return calculateAmplitude(amplitudeCurve, position);
+export function sampleSpectrumMovingAverage(spectrumCurve: {x: number, y: number[]}[], position: number, windowSize: number): number[] {
+	if (windowSize == 0) return spectrumCurve[findPointIndex(spectrumCurve, position)].y;
 
 	const windowStart = position - windowSize / 2;
 	const windowEnd = position + windowSize / 2;
-	const windowStartIndex = findPointIndex(amplitudeCurve, windowStart);
-	const windowEndIndex = findPointIndex(amplitudeCurve, windowEnd);
+	const windowStartIndex = findPointIndex(spectrumCurve, windowStart);
+	const windowEndIndex = findPointIndex(spectrumCurve, windowEnd);
 
-	let integral = 0;
 	if (windowStartIndex == windowEndIndex) {
-		const p1 = amplitudeCurve[windowStartIndex];
+		const p1 = spectrumCurve[windowStartIndex];
 
-		if (windowStartIndex > amplitudeCurve.length - 2) return p1.y;
-		const p2 = amplitudeCurve[windowStartIndex + 1];
+		if (windowStartIndex > spectrumCurve.length - 2) return p1.y;
+		const p2 = spectrumCurve[windowStartIndex + 1];
 
 		const yA = mapLinear(windowStart, p1.x, p2.x, p1.y, p2.y);
 		const yB = mapLinear(windowEnd, p1.x, p2.x, p1.y, p2.y);
 
-		return (yA + yB) / 2;
+		return sumArrays(yA,yB).map(function (x) { return x / 2; });
 	} else {
-		let p1 = amplitudeCurve[windowStartIndex];
-		let p2 = amplitudeCurve[windowStartIndex + 1];
+		let p1 = spectrumCurve[windowStartIndex];
+		let p2 = spectrumCurve[windowStartIndex + 1];
 
 		let p = { x: windowStart, y: mapLinear(windowStart, p1.x, p2.x, p1.y, p2.y) };
-		integral = integrateLinearFunction(p, p2);
+		let integral = integrateLinearFunction(p, p2);
 
 		for (let i = windowStartIndex + 1; i < windowEndIndex; i++) {
 			p1 = p2;
-			p2 = amplitudeCurve[i + 1];
+			p2 = spectrumCurve[i + 1];
 
-			integral += integrateLinearFunction(p1, p2);
+			integral = sumArrays(integral,integrateLinearFunction(p1, p2));
 		}
 
 		p1 = p2;
-		if (windowEndIndex > amplitudeCurve.length - 2) {
-			integral += p1.y * (windowEnd - p1.x);
+		if (windowEndIndex > spectrumCurve.length - 2) {
+			integral = sumArrays(integral,p1.y.map(function (x) { return x * (windowEnd - p1.x) }));
 		} else {
-			p2 = amplitudeCurve[windowEndIndex + 1];
+			p2 = spectrumCurve[windowEndIndex + 1];
 			p = { x: windowEnd, y: mapLinear(windowEnd, p1.x, p2.x, p1.y, p2.y) };
-			integral += integrateLinearFunction(p1, p);
+			integral = sumArrays(integral,integrateLinearFunction(p1, p));
 		}
-	}
 
-	return integral / windowSize;
+		return integral.map(function (x) { return x / windowSize; });
+	}
 }
